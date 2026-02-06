@@ -24,7 +24,21 @@ export const analyzeCV = async (
   const ai = new GoogleGenAI({ apiKey });
 
   console.time("Gemini_Analysis_Time");
-  const systemInstruction = `أنت محقق توظيف لمجموعة الكعكي. حلل الـ CV بدقة (سنة 2026). الرد JSON فقط حسب السكيما. كن مختصراً جداً جداً في الوصف لتجنب الانقطاع.`;
+  const systemInstruction = `أنت "كبير مستشاري التوظيف" لمجموعة الكعكي في العام 2026.
+مهمتك: تحليل السيرة الذاتية (CV) بدقة استراتيجية فائقة.
+
+قواعد صارمة والزامية:
+1. اللغة: يجب أن يكون الرد باللغة العربية الفصحى والمهنية 100% لكافة الحقول (بدون استثناء).
+2. الراتب المقترح وجدول الرواتب: لا تعطِ أرقاماً عشوائية. اعتمد على:
+   - متوسط الرواتب في السوق السعودي لعام 2026.
+   - مهارات المرشح النوعية (كلما زادت المهارات التقنية، زاد الراتب).
+   - الشهادات الاحترافية وسنوات الخبرة الفعلية.
+   - المسمى الوظيفي المستهدف ومستوى المسؤولية.
+   - اذكر نطاقاً منطقياً (مثلاً: 12,000 - 15,000) مع تحليل للأسباب.
+3. مخاطر التشغيل (operationalRisk): أعطِ رقماً من "0 إلى 100" يمثل مدى خطورة توظيف المرشح (مثلاً: 10 يعني استقرار عالي، 90 يعني خطورة عالية بسبب فجوات زمنية أو ضعف مهارات).
+4. البدائل الذكية: إذا كان المرشح غير مناسب للوظيفة الحالية، اقترح له أدواراً في المجموعة يكون "أنسب" لها بناءً على خلفيته.
+
+الرد يجب أن يكون JSON فقط حسب السكيما المحددة.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -33,12 +47,12 @@ export const analyzeCV = async (
         {
           parts: [
             content as any,
-            { text: `${systemInstruction}\nالمسمى: ${targetJob}\nالمرشح: ${candidateName}\nسياق: ${additionalContext}` }
+            { text: `${systemInstruction}\nالمسمى المستهدف حالياً: ${targetJob}\nاسم المرشح: ${candidateName}\nسياق إضافي من المستخدم: ${additionalContext}` }
           ]
         }
       ],
       config: {
-        temperature: 0, // أسرع وأكثر دقة في الهيكلة
+        temperature: 0.1, // أسرع وأكثر دقة في الهيكلة
         maxOutputTokens: 4096, // زيادة المساحة لتجنب بتر النص
         responseMimeType: "application/json",
         responseSchema: {
@@ -105,7 +119,7 @@ export const analyzeCV = async (
               }
             }
           },
-          required: ["matchScore", "meritJudgment", "aiFinalRecommendation"]
+          required: ["matchScore", "meritJudgment", "aiFinalRecommendation", "operationalRisk", "salaryBenchmark"]
         }
       }
     });
@@ -121,10 +135,15 @@ export const analyzeCV = async (
     cleanJson = cleanJson.trim();
 
     try {
-      return JSON.parse(cleanJson) as AnalysisResult;
+      const parsed = JSON.parse(cleanJson);
+      // ضمان أن الـ risk هو رقم من 100
+      if (parsed.operationalRisk < 1 && parsed.operationalRisk > 0) {
+        parsed.operationalRisk = Math.round(parsed.operationalRisk * 100);
+      }
+      return parsed as AnalysisResult;
     } catch (parseError) {
-      console.error("Malformed JSON received:", cleanJson);
-      throw new Error("حدث خطأ في معالجة البيانات من الذكاء الاصطناعي، يرجى المحاولة مرة أخرى.");
+      console.error("Malformed JSON:", cleanJson);
+      throw new Error("حدث خطأ في معالجة البيانات بالعربي، يرجى المحاولة مرة أخرى.");
     }
   } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
