@@ -48,7 +48,7 @@ export const analyzeCV = async (
 - interviewGuide: 4 أسئلة استراتيجية مع أهدافها.`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-1.5-flash',
     contents: { parts: [content, { text: `${systemInstruction}\n\nسياق إضافي: ${additionalContext}\nالوظيفة المستهدفة: ${targetJob}\nاسم المرشح: ${candidateName}` }] },
     config: {
       responseMimeType: "application/json",
