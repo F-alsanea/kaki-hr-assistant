@@ -1,5 +1,4 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { AnalysisResult } from "../types";
 
 export interface CVContent {
@@ -20,7 +19,11 @@ export const analyzeCV = async (
   if (!apiKey) {
     throw new Error('API Key is missing. Please set VITE_GEMINI_API_KEY.');
   }
-  const ai = new GoogleGenAI({ apiKey });
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash",
+  });
 
   const currentDate = "2026-02-06";
   const systemInstruction = `أنت "المحقق الفني الأول" واستشاري التوظيف الاستراتيجي لمجموعة الكعكي. التاريخ الحالي هو ${currentDate}.
@@ -47,98 +50,107 @@ export const analyzeCV = async (
 - salaryBenchmark: تحليل الراتب المقترح.
 - interviewGuide: 4 أسئلة استراتيجية مع أهدافها.`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-1.5-flash',
-    contents: { parts: [content, { text: `${systemInstruction}\n\nسياق إضافي: ${additionalContext}\nالوظيفة المستهدفة: ${targetJob}\nاسم المرشح: ${candidateName}` }] },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          matchScore: { type: Type.NUMBER },
-          suitabilityLabel: { type: Type.STRING },
-          meritJudgment: { type: Type.STRING },
-          operationalRisk: { type: Type.NUMBER },
-          summary: { type: Type.STRING },
-          recommendationWhy: { type: Type.STRING },
-          aiFinalRecommendation: { type: Type.STRING },
-          strengths: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING },
-                description: { type: Type.STRING },
-                impactOrMitigation: { type: Type.STRING }
-              }
-            }
-          },
-          weaknesses: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING },
-                description: { type: Type.STRING },
-                impactOrMitigation: { type: Type.STRING }
-              }
-            }
-          },
-          alternatives: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                jobTitle: { type: Type.STRING },
-                score: { type: Type.NUMBER },
-                reason: { type: Type.STRING }
-              }
-            }
-          },
-          salaryBenchmark: {
-            type: Type.OBJECT,
+  const generationConfig = {
+    temperature: 1,
+    topP: 0.95,
+    topK: 40,
+    maxOutputTokens: 8192,
+    responseMimeType: "application/json",
+    responseSchema: {
+      type: SchemaType.OBJECT,
+      properties: {
+        matchScore: { type: SchemaType.NUMBER },
+        suitabilityLabel: { type: SchemaType.STRING },
+        meritJudgment: { type: SchemaType.STRING },
+        operationalRisk: { type: SchemaType.NUMBER },
+        description: { type: SchemaType.STRING },
+        strengths: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
             properties: {
-              suggestedSalary: { type: Type.STRING },
-              analysis: { type: Type.STRING }
-            }
-          },
-          interviewGuide: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                question: { type: Type.STRING },
-                target: { type: Type.STRING },
-                expectedAnswerHint: { type: Type.STRING },
-                category: { type: Type.STRING }
-              }
-            }
-          },
-          discrepancies: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                field: { type: Type.STRING },
-                userInput: { type: Type.STRING },
-                cvDetected: { type: Type.STRING },
-                cvSnippet: { type: Type.STRING },
-                severity: { type: Type.STRING }
-              }
-            }
-          },
-          priorityFlags: {
-            type: Type.OBJECT,
-            properties: {
-              isSaudi: { type: Type.BOOLEAN },
-              transferableIqama: { type: Type.BOOLEAN }
+              title: { type: SchemaType.STRING },
+              description: { type: SchemaType.STRING },
+              impactOrMitigation: { type: SchemaType.STRING }
             }
           }
         },
-        required: ["matchScore", "meritJudgment", "operationalRisk", "salaryBenchmark", "interviewGuide"]
-      }
-    }
+        weaknesses: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              title: { type: SchemaType.STRING },
+              description: { type: SchemaType.STRING },
+              impactOrMitigation: { type: SchemaType.STRING }
+            }
+          }
+        },
+        alternatives: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              jobTitle: { type: SchemaType.STRING },
+              score: { type: SchemaType.NUMBER },
+              reason: { type: SchemaType.STRING }
+            }
+          }
+        },
+        salaryBenchmark: {
+          type: SchemaType.OBJECT,
+          properties: {
+            suggestedSalary: { type: SchemaType.STRING },
+            analysis: { type: SchemaType.STRING }
+          }
+        },
+        interviewGuide: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              question: { type: SchemaType.STRING },
+              target: { type: SchemaType.STRING },
+              expectedAnswerHint: { type: SchemaType.STRING },
+              category: { type: SchemaType.STRING }
+            }
+          }
+        },
+        priorityFlags: {
+          type: SchemaType.OBJECT,
+          properties: {
+            isSaudi: { type: SchemaType.BOOLEAN },
+            transferableIqama: { type: SchemaType.BOOLEAN }
+          }
+        },
+        discrepancies: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              field: { type: SchemaType.STRING },
+              cvDetected: { type: SchemaType.STRING },
+              severity: { type: SchemaType.STRING }
+            }
+          }
+        }
+      },
+      required: ["matchScore", "meritJudgment", "operationalRisk", "salaryBenchmark", "interviewGuide"]
+    },
+  };
+
+  const result = await model.generateContent({
+    contents: [
+      {
+        role: "user",
+        parts: [
+          content as any,
+          { text: `${systemInstruction}\n\nسياق إضافي: ${additionalContext}\nالوظيفة المستهدفة: ${targetJob}\nاسم المرشح: ${candidateName}` }
+        ],
+      },
+    ],
+    generationConfig,
   });
 
-  return JSON.parse(response.text || '{}') as AnalysisResult;
+  return JSON.parse(result.response.text()) as AnalysisResult;
 };
