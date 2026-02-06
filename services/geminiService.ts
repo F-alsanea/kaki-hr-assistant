@@ -29,7 +29,7 @@ export const analyzeCV = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-3-flash-preview', // المحرك الذي نجح في اختبار AI Studio الخاص بك
       contents: [
         {
           parts: [
@@ -39,7 +39,8 @@ export const analyzeCV = async (
         }
       ],
       config: {
-        temperature: 0.1,
+        temperature: 0.1, // منخفض لسرعة ودقة أعلى
+        maxOutputTokens: 2048, // تقليل عدد الرموز لتفريع الاستجابة
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
