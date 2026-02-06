@@ -24,23 +24,22 @@ export const analyzeCV = async (
   const ai = new GoogleGenAI({ apiKey });
 
   console.time("Gemini_Analysis_Time");
-  const systemInstruction = `أنت خبير توظيف لمجموعة الكعكي. حلل السيرة الذاتية بدقة استناداً لعام 2026.
-الرد يجب أن يكون JSON فقط حسب السكيما. كن مختصراً ومهنياً جداً.`;
+  const systemInstruction = `أنت محقق توظيف لمجموعة الكعكي. حلل الـ CV بدقة (سنة 2026). الرد JSON فقط حسب السكيما. كن مختصراً جداً جداً في الوصف لتجنب الانقطاع.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', // المحرك الذي نجح في اختبار AI Studio الخاص بك
+      model: 'gemini-1.5-flash',
       contents: [
         {
           parts: [
             content as any,
-            { text: `${systemInstruction}\nالمسمى المستهدف: ${targetJob}\nالمرشح: ${candidateName}\nسياق: ${additionalContext}` }
+            { text: `${systemInstruction}\nالمسمى: ${targetJob}\nالمرشح: ${candidateName}\nسياق: ${additionalContext}` }
           ]
         }
       ],
       config: {
-        temperature: 0.1, // منخفض لسرعة ودقة أعلى
-        maxOutputTokens: 2048, // تقليل عدد الرموز لتفريع الاستجابة
+        temperature: 0, // أسرع وأكثر دقة في الهيكلة
+        maxOutputTokens: 4096, // زيادة المساحة لتجنب بتر النص
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -113,8 +112,20 @@ export const analyzeCV = async (
 
     console.timeEnd("Gemini_Analysis_Time");
     const text = response.text || '';
-    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleanJson) as AnalysisResult;
+
+    // تنظيف متطور للـ JSON لتجنب أخطاء البارس
+    let cleanJson = text;
+    if (text.includes('```')) {
+      cleanJson = text.split(/```(?:json)?/)[1]?.split('```')[0] || text;
+    }
+    cleanJson = cleanJson.trim();
+
+    try {
+      return JSON.parse(cleanJson) as AnalysisResult;
+    } catch (parseError) {
+      console.error("Malformed JSON received:", cleanJson);
+      throw new Error("حدث خطأ في معالجة البيانات من الذكاء الاصطناعي، يرجى المحاولة مرة أخرى.");
+    }
   } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
     throw error;
