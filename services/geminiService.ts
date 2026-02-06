@@ -139,18 +139,26 @@ export const analyzeCV = async (
     },
   };
 
-  const result = await model.generateContent({
-    contents: [
-      {
-        role: "user",
-        parts: [
-          content as any,
-          { text: `${systemInstruction}\n\nسياق إضافي: ${additionalContext}\nالوظيفة المستهدفة: ${targetJob}\nاسم المرشح: ${candidateName}` }
-        ],
-      },
-    ],
-    generationConfig,
-  });
+  try {
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            content as any,
+            { text: `${systemInstruction}\n\nسياق إضافي: ${additionalContext}\nالوظيفة المستهدفة: ${targetJob}\nاسم المرشح: ${candidateName}` }
+          ],
+        },
+      ],
+      generationConfig,
+    });
 
-  return JSON.parse(result.response.text()) as AnalysisResult;
+    const text = result.response.text();
+    // Clean JSON if AI includes markdown backticks
+    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanJson) as AnalysisResult;
+  } catch (error: any) {
+    console.error("Gemini Analysis Error:", error);
+    throw error;
+  }
 };

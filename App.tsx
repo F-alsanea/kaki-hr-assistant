@@ -141,8 +141,9 @@ const App: React.FC = () => {
       const context = `الاسم: ${candidateName}, الوظيفة: ${targetJob}, الجنسية: ${nationality}, الراتب المتوقع: ${expectedSalary}`;
       const data = await analyzeCV(cvContent, targetJob, candidateName, context);
       setResult(data);
-    } catch (err) {
-      setError('فشل التحليل الاستراتيجي، يرجى المحاولة لاحقاً');
+    } catch (err: any) {
+      console.error(err);
+      setError(`فشل التحليل: ${err.message || 'خطأ غير معروف'}`);
     } finally {
       setLoading(false);
       clearTimeout(step1); clearTimeout(step2); clearTimeout(step3);
