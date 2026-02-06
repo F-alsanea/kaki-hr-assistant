@@ -17,11 +17,11 @@ export const analyzeCV = async (
 ): Promise<AnalysisResult> => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('مفتاح الـ API مفقود، يرجى ضبطه في إعدادات Vercel باسم VITE_GEMINI_API_KEY');
+    throw new Error('API Key is missing. Please set VITE_GEMINI_API_KEY in Vercel settings.');
   }
   
   const genAI = new GoogleGenerativeAI(apiKey);
-  // الرجوع للاسم المستقر والأساسي لضمان التوافق
+  // تأكد من استخدام هذا الاسم الصافي للمحرك
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
   });
@@ -32,13 +32,8 @@ export const analyzeCV = async (
 
 قواعد المعالجة الذكية:
 1. الوعي الزمني: نحن في عام 2026. أي خبرة بدأت في 2025 هي خبرة جارية ومستمرة.
-2. الدقة والتحقيق: قارن بين سنوات التخرج وتواريخ التوظيف لاكتشاف أي فجوات زمنية أو تعارضات منطقية.
-3. التقييم الاستراتيجي:
-   - "النقاط الحقيقية للقوة": ركز على المهارات التي تميز المرشح فعلياً (خبرة نوعية، شهادات، استقرار وظيفي).
-   - "الفجوات ونقاط التحسين": ذكر ما ينقص المرشح للوصول للمثالية في الدور الوظيفي.
-   - "بدائل ذكية": اقترح وظائف أخرى أنسب للمرشح لو لم يكن مناسباً تماماً للوظيفة الحالية.
-4. الشخصية: كن صارماً في تقييم المخاطر (operationalRisk) ومبدعاً في "بدائل ذكية".
-5. الإيجاز والمهنية: استخدم لغة عربية فصحى ومختصرة جداً.
+2. الدقة والتحقيق والمطابقة: قارن بدقة بين سنوات التخرج وتواريخ التوظيف.
+3. الإيجاز والمهنية: استخدم لغة عربية فصحى ومختصرة جداً في النقاط.
 
 الحقول المطلوبة في الرد (JSON فقط):
 - matchScore: نسبة المطابقة (0-100).
@@ -47,9 +42,9 @@ export const analyzeCV = async (
 - operationalRisk: مؤشر المخاطر (0-100).
 - strengths: قائمة من 3 نقاط قوة.
 - weaknesses: قائمة من 3 فجوات.
-- alternatives: 2-3 وظائف بديلة.
+- alternatives: 2-3 وظائف بديلة تناسب مهاراته.
 - salaryBenchmark: تحليل الراتب المقترح.
-- interviewGuide: 4 أسئلة استراتيجية مع أهدافها.`;
+- interviewGuide: 4 أسئلة استراتيجية.`;
 
   const generationConfig = {
     temperature: 0.7,
@@ -119,12 +114,23 @@ export const analyzeCV = async (
 
   try {
     const result = await model.generateContent({
-      contents: [{ role: "user", parts: [content as any, { text: systemInstruction }] }],
+      contents: [
+        {
+          role: "user",
+          parts: [
+            content as any,
+            { text: `${systemInstruction}\n\nسياق إضافي: ${additionalContext}\nالوظيفة المستهدفة: ${targetJob}\nاسم المرشح: ${candidateName}` }
+          ],
+        },
+      ],
       generationConfig,
     });
-    return JSON.parse(result.response.text().replace(/```json/g, '').replace(/```/g, '').trim()) as AnalysisResult;
+
+    const text = result.response.text();
+    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanJson) as AnalysisResult;
   } catch (error: any) {
-    console.error("Gemini Error:", error);
+    console.error("Gemini Analysis Error:", error);
     throw error;
   }
 };
