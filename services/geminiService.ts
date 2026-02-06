@@ -17,10 +17,11 @@ export const analyzeCV = async (
 ): Promise<AnalysisResult> => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('مفتاح الـ API مفقود، يرجى ضبطه في إعدادات Vercel باسم VITE_GEMINI_API_KEY');
+    throw new Error('API Key is missing. Please set VITE_GEMINI_API_KEY in Vercel settings.');
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
+  // Using the stable model ID that worked in AI Studio tests
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
   });
@@ -28,12 +29,6 @@ export const analyzeCV = async (
   const currentDate = "2026-02-07";
   const systemInstruction = `أنت "المحقق الفني الأول" واستشاري التوظيف الاستراتيجي لمجموعة الكعكي. التاريخ الحالي هو ${currentDate}.
 مهمتك: تحليل السيرة الذاتية المرفوعة بدقة متناهية بناءً على تاريخ اليوم وتقديم تقرير استراتيجي كامل.
-
-قواعد المعالجة:
-1. الوعي الزمني: نحن في عام 2026. التحليل يجب أن يكون محدثاً.
-2. الدقة: قارن بين سنوات التخرج وتواريخ التوظيف لاكتشاف الفجوات.
-3. التقييم: قدم نقاط قوة حقيقية، فجوات واضحة، وبدائل وظيفية ذكية.
-4. الإيجاز: استخدم لغة عربية مهنية ومباشرة.
 
 يجب أن يكون الرد JSON فقط متوافقاً تماماً مع السكيما المعطاة.`;
 
