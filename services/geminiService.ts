@@ -23,23 +23,23 @@ export const analyzeCV = async (
   // استخدام الـ SDK الجديد والمحرك الموضح في صورتك من AI Studio
   const ai = new GoogleGenAI({ apiKey });
 
-  const currentDate = "2026-02-07";
-  const systemInstruction = `أنت "المحقق الفني الأول" واستشاري التوظيف الاستراتيجي لمجموعة الكعكي. التاريخ الحالي هو ${currentDate}.
-مهمتك: تحليل السيرة الذاتية المرفوعة بدقة متناهية بناءً على تاريخ اليوم وتقديم تقرير استراتيجي كامل.
-يجب أن يكون الرد JSON فقط متوافقاً تماماً مع السكيما المعطاة.`;
+  console.time("Gemini_Analysis_Time");
+  const systemInstruction = `أنت خبير توظيف لمجموعة الكعكي. حلل السيرة الذاتية بدقة استناداً لعام 2026.
+الرد يجب أن يكون JSON فقط حسب السكيما. كن مختصراً ومهنياً جداً.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-1.5-flash',
       contents: [
         {
           parts: [
             content as any,
-            { text: `${systemInstruction}\n\nسياق إضافي: ${additionalContext}\nالوظيفة المستهدفة: ${targetJob}\nاسم المرشح: ${candidateName}` }
+            { text: `${systemInstruction}\nالمسمى المستهدف: ${targetJob}\nالمرشح: ${candidateName}\nسياق: ${additionalContext}` }
           ]
         }
       ],
       config: {
+        temperature: 0.1,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -103,30 +103,19 @@ export const analyzeCV = async (
                 isSaudi: { type: Type.BOOLEAN },
                 transferableIqama: { type: Type.BOOLEAN }
               }
-            },
-            discrepancies: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  field: { type: Type.STRING },
-                  cvDetected: { type: Type.STRING },
-                  severity: { type: Type.STRING }
-                }
-              }
             }
           },
-          required: ["matchScore", "meritJudgment", "operationalRisk", "salaryBenchmark", "interviewGuide", "aiFinalRecommendation"]
+          required: ["matchScore", "meritJudgment", "aiFinalRecommendation"]
         }
       }
     });
 
-    // تنظيف النص والتأكد من أنه JSON صالح
+    console.timeEnd("Gemini_Analysis_Time");
     const text = response.text || '';
     const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(cleanJson) as AnalysisResult;
   } catch (error: any) {
-    console.error("Gemini 3 Analysis Error:", error);
+    console.error("Gemini Analysis Error:", error);
     throw error;
   }
 };
