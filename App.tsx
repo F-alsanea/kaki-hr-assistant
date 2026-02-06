@@ -215,7 +215,7 @@ const App: React.FC = () => {
             <div className="p-4 bg-indigo-600 rounded-2xl text-white shadow-xl"><ShieldCheck size={40} /></div>
           </div>
           <h2 className="text-3xl font-black mb-1">مجموعة الكعكي</h2>
-          <p className="text-[10px] font-black opacity-40 mb-10 uppercase tracking-widest">Executive Intelligence Portal 2026</p>
+          <p className="text-[10px] font-black opacity-40 mb-10 uppercase tracking-widest">منصة التحليل الذكي 2026</p>
           <div className="space-y-6">
             <div className="relative group">
               <User className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30" size={20} />
@@ -316,7 +316,7 @@ const App: React.FC = () => {
                 <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-600/5 rounded-full -translate-x-20 -translate-y-20" />
                 <div className="text-right flex-1 z-10">
                   <div className="flex items-center gap-4 justify-end mb-8">
-                    <span className="px-6 py-2 bg-indigo-500/10 text-indigo-400 rounded-full text-xs font-black border border-indigo-500/20">Executive Dossier 2026</span>
+                    <span className="px-6 py-2 bg-indigo-500/10 text-indigo-400 rounded-full text-xs font-black border border-indigo-500/20">تقرير فني معتمد 2026</span>
                     {result.priorityFlags?.isSaudi && <span className="px-6 py-2 bg-emerald-600 text-white rounded-full text-xs font-black shadow-lg">كادر وطني</span>}
                   </div>
                   <h2 className="text-7xl font-black tracking-tighter leading-none mb-8">{candidateName || 'مرشح معتمد'}</h2>
@@ -443,22 +443,22 @@ const App: React.FC = () => {
                 </div>
               </section>
 
-              {/* Footer Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className={`p-10 rounded-[3.5rem] border flex flex-col items-center justify-center text-center ${cardStyle}`}>
-                  <Activity className="text-rose-500 mb-4" size={36} />
-                  <div className="text-5xl font-black mb-2 text-[#0F172A] dark:text-white">{result.operationalRisk}%</div>
-                  <p className="text-[10px] font-black opacity-50 uppercase tracking-widest text-[#0F172A] dark:text-gray-400">مخاطر التشغيل</p>
+              {/* Footer Stats / Risk & Salary */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 no-print">
+                <div className={`p-10 rounded-[3.5rem] border flex flex-col items-center justify-center text-center ${cardStyle} ${result.operationalRisk >= 70 ? 'border-rose-500/50' : result.operationalRisk >= 30 ? 'border-amber-500/50' : 'border-emerald-500/50'}`}>
+                  <Activity className={result.operationalRisk >= 70 ? 'text-rose-500' : result.operationalRisk >= 30 ? 'text-amber-500' : 'text-emerald-500'} size={36} />
+                  <div className="text-5xl font-black mb-2 text-[#0F172A] dark:text-white">{result.operationalRisk}/100</div>
+                  <p className="text-[10px] font-black opacity-50 uppercase tracking-widest text-[#0F172A] dark:text-gray-400">مستوى مخاطر التشغيل</p>
                 </div>
-                <div className={`p-10 rounded-[3.5rem] border flex flex-col items-center justify-center text-center ${cardStyle}`}>
+                <div className={`p-10 rounded-[3.5rem] border flex flex-col items-center justify-center text-center ${cardStyle} border-emerald-500/30`}>
                   <Banknote className="text-emerald-500 mb-4" size={36} />
-                  <div className="text-2xl font-black mb-2 text-[#0F172A] dark:text-white">{result.salaryBenchmark?.suggestedSalary}</div>
-                  <p className="text-[10px] font-black opacity-50 uppercase tracking-widest text-[#0F172A] dark:text-gray-400">الراتب المقترح 2026</p>
+                  <div className="text-2xl font-black mb-2 text-[#0F172A] dark:text-white text-center" dir="rtl">{result.salaryBenchmark?.suggestedSalary}</div>
+                  <p className="text-[10px] font-black opacity-50 uppercase tracking-widest text-[#0F172A] dark:text-gray-400">الراتب المتوقع (سوق 2026)</p>
                 </div>
-                <div className={`p-10 rounded-[3.5rem] border flex flex-col items-center justify-center text-center ${cardStyle}`}>
+                <div className={`p-10 rounded-[3.5rem] border flex flex-col items-center justify-center text-center ${cardStyle} border-indigo-500/30`}>
                   <Target className="text-indigo-400 mb-4" size={36} />
                   <div className="text-2xl font-black mb-2 text-[#0F172A] dark:text-white">{result.aiFinalRecommendation}</div>
-                  <p className="text-[10px] font-black opacity-50 uppercase tracking-widest text-[#0F172A] dark:text-gray-400">التوصية النهائية</p>
+                  <p className="text-[10px] font-black opacity-50 uppercase tracking-widest text-[#0F172A] dark:text-gray-400">الخلاصة الاستراتيجية</p>
                 </div>
               </div>
 
@@ -491,33 +491,46 @@ const App: React.FC = () => {
           main { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
           .lg\\:col-span-9 { width: 100% !important; grid-column: span 12 / span 12 !important; }
           
-          /* Remove glass effects and blurs for printing */
-          .glass-effect, .backdrop-blur-xl, .backdrop-blur-md { 
-            backdrop-filter: none !important; 
-            background: white !important; 
-            border-color: #e2e8f0 !important;
+          /* Force columns to stack for cleaner print */
+          .grid-cols-1, .md\\:grid-cols-2, .md\\:grid-cols-3 {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 1.5rem !important;
           }
           
-          /* Ensure colors are printed */
-          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-          
-          /* Section breaks */
-          section, .rounded-\\[5rem\\], .grid { 
-            break-inside: avoid !important; 
-            page-break-inside: avoid !important;
-            margin-bottom: 2rem !important;
-          }
-          
-          /* Force light theme colors for printing */
-          .dark, .dusk { 
+          /* Reset cards for white paper */
+          section, div[class*="rounded-"], .p-12, .p-10, .p-16 { 
             background: white !important; 
             color: black !important; 
-          }
-          .dark .text-white, .dusk .text-white { color: #0f172a !important; }
-          .dark .bg-\\[\\#0F172A\\], .dusk .bg-\\[\\#1E1B4B\\] { 
-            background: #f8fafc !important; 
             border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+            border-radius: 1.5rem !important;
+            padding: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
           }
+
+          /* Titles and text accessibility */
+          h2, h3, h4, p, span { color: black !important; text-shadow: none !important; }
+          .text-white { color: black !important; }
+          .bg-indigo-600, .bg-emerald-600, .bg-rose-600 { 
+            background: #f1f5f9 !important; 
+            color: black !important;
+            border: 2px solid #000 !important;
+          }
+          
+          /* Header optimization */
+          .text-7xl { font-size: 3rem !important; }
+          
+          /* Charts/SVG fix */
+          svg { filter: none !important; }
+          
+          /* Footer stats for print - vertical stack */
+          .no-print-grid { display: block !important; }
+          
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
       `}</style>
     </div >
