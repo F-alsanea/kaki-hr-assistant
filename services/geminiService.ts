@@ -17,34 +17,25 @@ export const analyzeCV = async (
 ): Promise<AnalysisResult> => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('API Key is missing. Please set VITE_GEMINI_API_KEY in Vercel settings.');
+    throw new Error('مفتاح الـ API مفقود، يرجى ضبطه في إعدادات Vercel باسم VITE_GEMINI_API_KEY');
   }
-  
+
   const genAI = new GoogleGenerativeAI(apiKey);
-  // تأكد من استخدام هذا الاسم الصافي للمحرك
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
   });
 
   const currentDate = "2026-02-07";
   const systemInstruction = `أنت "المحقق الفني الأول" واستشاري التوظيف الاستراتيجي لمجموعة الكعكي. التاريخ الحالي هو ${currentDate}.
-مهمتك: تحليل السيرة الذاتية المرفوعة بدقة متناهية بناءً على تاريخ اليوم وتقديم تقرير احترافي بصرياً ومنطقياً.
+مهمتك: تحليل السيرة الذاتية المرفوعة بدقة متناهية بناءً على تاريخ اليوم وتقديم تقرير استراتيجي كامل.
 
-قواعد المعالجة الذكية:
-1. الوعي الزمني: نحن في عام 2026. أي خبرة بدأت في 2025 هي خبرة جارية ومستمرة.
-2. الدقة والتحقيق والمطابقة: قارن بدقة بين سنوات التخرج وتواريخ التوظيف.
-3. الإيجاز والمهنية: استخدم لغة عربية فصحى ومختصرة جداً في النقاط.
+قواعد المعالجة:
+1. الوعي الزمني: نحن في عام 2026. التحليل يجب أن يكون محدثاً.
+2. الدقة: قارن بين سنوات التخرج وتواريخ التوظيف لاكتشاف الفجوات.
+3. التقييم: قدم نقاط قوة حقيقية، فجوات واضحة، وبدائل وظيفية ذكية.
+4. الإيجاز: استخدم لغة عربية مهنية ومباشرة.
 
-الحقول المطلوبة في الرد (JSON فقط):
-- matchScore: نسبة المطابقة (0-100).
-- suitabilityLabel: وصف قصير (مثل: "مطابق تماماً"، "يحتاج تطوير").
-- meritJudgment: حكم تفصيلي بالعربي يوضح لماذا يستحق المرشح الوظيفة.
-- operationalRisk: مؤشر المخاطر (0-100).
-- strengths: قائمة من 3 نقاط قوة.
-- weaknesses: قائمة من 3 فجوات.
-- alternatives: 2-3 وظائف بديلة تناسب مهاراته.
-- salaryBenchmark: تحليل الراتب المقترح.
-- interviewGuide: 4 أسئلة استراتيجية.`;
+يجب أن يكون الرد JSON فقط متوافقاً تماماً مع السكيما المعطاة.`;
 
   const generationConfig = {
     temperature: 0.7,
@@ -59,6 +50,7 @@ export const analyzeCV = async (
         suitabilityLabel: { type: SchemaType.STRING },
         meritJudgment: { type: SchemaType.STRING },
         operationalRisk: { type: SchemaType.NUMBER },
+        aiFinalRecommendation: { type: SchemaType.STRING },
         strengths: {
           type: SchemaType.ARRAY,
           items: {
@@ -106,9 +98,27 @@ export const analyzeCV = async (
               expectedAnswerHint: { type: SchemaType.STRING }
             }
           }
+        },
+        priorityFlags: {
+          type: SchemaType.OBJECT,
+          properties: {
+            isSaudi: { type: SchemaType.BOOLEAN },
+            transferableIqama: { type: SchemaType.BOOLEAN }
+          }
+        },
+        discrepancies: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              field: { type: SchemaType.STRING },
+              cvDetected: { type: SchemaType.STRING },
+              severity: { type: SchemaType.STRING }
+            }
+          }
         }
       },
-      required: ["matchScore", "meritJudgment", "operationalRisk", "salaryBenchmark", "interviewGuide"]
+      required: ["matchScore", "meritJudgment", "operationalRisk", "salaryBenchmark", "interviewGuide", "aiFinalRecommendation"]
     },
   };
 
