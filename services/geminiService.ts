@@ -171,18 +171,20 @@ export const analyzeCV = async (
       throw new Error("محتوى السيرة الذاتية فارغ أو غير صالح (Empty Content)");
     }
 
-    // المحاولة الأولى: الموديل السريع والحديث
-    let text = await tryGenerate("gemini-1.5-flash-latest");
-
-    // المحاولة الثانية: الموديل المستقر (Fallback)
-    if (!text) {
-      console.log("Switching to fallback model (gemini-pro)...");
-      text = await tryGenerate("gemini-pro");
-    }
+    // استخدام موديل 1.5 Flash القياسي
+    const text = await tryGenerate("gemini-1.5-flash");
 
     if (!text) {
       const errorDetail = lastError?.message || lastError?.toString() || 'Unknown Error';
-      throw new Error(`فشل التحليل (كود الخطأ: ${errorDetail}). تأكد من صلاحية المفتاح والرصيد.`);
+      // تحليل الخطأ لتقديم نصيحة دقيقة
+      if (errorDetail.includes('404')) {
+        throw new Error(`موديل الذكاء الاصطناعي غير موجود (404). تأكد من تفعيل "Generative Language API" في Google Cloud Console لهذا المفتاح.`);
+      } else if (errorDetail.includes('429')) {
+        throw new Error(`تم تجاوز حد الاستخدام (Quota Exceeded). يرجى المحاولة لاحقاً.`);
+      } else if (errorDetail.includes('403')) {
+        throw new Error(`غير مصرح (403). تأكد من صحة مفتاح API وصلاحياته.`);
+      }
+      throw new Error(`فشل التحليل (كود الخطأ: ${errorDetail}).`);
     }
 
     // Clean JSON if AI includes markdown backticks
