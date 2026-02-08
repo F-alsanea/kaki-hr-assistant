@@ -21,7 +21,7 @@ export const analyzeCV = async (
   }
 
   // استخدام الـ SDK الجديد والمحرك الموضح في صورتك من AI Studio
-  const genAI = new GoogleGenAI({ apiKey });
+  const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
   });
