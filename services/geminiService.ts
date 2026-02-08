@@ -141,29 +141,50 @@ export const analyzeCV = async (
     },
   };
 
+  const tryGenerate = async (modelName: string) => {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              content as any,
+              { text: `${systemInstruction}\n\nسياق إضافي: ${additionalContext}\nالوظيفة المستهدفة: ${targetJob}\nاسم المرشح: ${candidateName}` }
+            ],
+          },
+        ],
+        generationConfig,
+      });
+      return result.response.text();
+    } catch (error) {
+      console.warn(`Failed with model ${modelName}:`, error);
+      return null;
+    }
+  };
+
   try {
     if (!content.inlineData && !content.text) {
       throw new Error("محتوى السيرة الذاتية فارغ أو غير صالح (Empty Content)");
     }
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            content as any,
-            { text: `${systemInstruction}\n\nسياق إضافي: ${additionalContext}\nالوظيفة المستهدفة: ${targetJob}\nاسم المرشح: ${candidateName}` }
-          ],
-        },
-      ],
-      generationConfig,
-    });
+    // المحاولة الأولى: الموديل السريع والحديث
+    let text = await tryGenerate("gemini-1.5-flash-latest");
 
-    console.timeEnd("Gemini_Analysis_Time");
-    const text = result.response.text();
+    // المحاولة الثانية: الموديل المستقر (Fallback)
+    if (!text) {
+      console.log("Switching to fallback model (gemini-pro)...");
+      text = await tryGenerate("gemini-pro");
+    }
+
+    if (!text) {
+      throw new Error("فشل التحليل باستخدام جميع الموديلات المتاحة. يرجى التحقق من مفتاح API أو المحاولة لاحقاً.");
+    }
+
     // Clean JSON if AI includes markdown backticks
     const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(cleanJson) as AnalysisResult;
+
   } catch (error: any) {
     console.error("Gemini Analysis Error Full Object:", JSON.stringify(error, null, 2));
     if (error.message?.includes("400")) {
