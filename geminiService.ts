@@ -22,7 +22,7 @@ export const analyzeCV = async (
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash-latest",
+    model: "gemini-1.5-flash",
   });
 
   const currentDate = "2026-02-06";
@@ -140,6 +140,10 @@ export const analyzeCV = async (
   };
 
   try {
+    if (!content.inlineData && !content.text) {
+      throw new Error("محتوى السيرة الذاتية فارغ أو غير صالح (Empty Content)");
+    }
+
     const result = await model.generateContent({
       contents: [
         {
@@ -158,7 +162,11 @@ export const analyzeCV = async (
     const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(cleanJson) as AnalysisResult;
   } catch (error: any) {
-    console.error("Gemini Analysis Error:", error);
+    console.error("Gemini Analysis Error Full Object:", JSON.stringify(error, null, 2));
+    // Check for specific error types if possible, otherwise pass the message
+    if (error.message?.includes("400")) {
+      throw new Error("طلب غير صالح (400) - ربما الملف كبير جداً أو تالف.");
+    }
     throw error;
   }
 };

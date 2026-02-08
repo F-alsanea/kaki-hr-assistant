@@ -214,8 +214,8 @@ const App: React.FC = () => {
             <ThemeSwitcher />
             <div className="p-4 bg-indigo-600 rounded-2xl text-white shadow-xl"><ShieldCheck size={40} /></div>
           </div>
-          <h2 className="text-3xl font-black mb-1">مجموعة الكعكي</h2>
-          <p className="text-[10px] font-black opacity-40 mb-10 uppercase tracking-widest">منصة التحليل الذكي 2026</p>
+          <h2 className="text-3xl font-black mb-1 text-center">مجموعة الكعكي</h2>
+          <p className="text-[10px] font-black opacity-40 mb-10 uppercase tracking-widest text-center">منصة التحليل الذكي 2026</p>
           <div className="space-y-6">
             <div className="relative group">
               <User className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30" size={20} />
