@@ -141,6 +141,8 @@ export const analyzeCV = async (
     },
   };
 
+  let lastError: any = null;
+
   const tryGenerate = async (modelName: string) => {
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
@@ -159,6 +161,7 @@ export const analyzeCV = async (
       return result.response.text();
     } catch (error) {
       console.warn(`Failed with model ${modelName}:`, error);
+      lastError = error;
       return null;
     }
   };
@@ -178,7 +181,8 @@ export const analyzeCV = async (
     }
 
     if (!text) {
-      throw new Error("فشل التحليل باستخدام جميع الموديلات المتاحة. يرجى التحقق من مفتاح API أو المحاولة لاحقاً.");
+      const errorDetail = lastError?.message || lastError?.toString() || 'Unknown Error';
+      throw new Error(`فشل التحليل (كود الخطأ: ${errorDetail}). تأكد من صلاحية المفتاح والرصيد.`);
     }
 
     // Clean JSON if AI includes markdown backticks
